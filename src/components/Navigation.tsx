@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,9 +7,8 @@ const Navigation = () => {
 
   const navItems = [
     { id: "about", label: "ABOUT" },
-    { id: "experience", label: "EXPERIENCE" },
-    { id: "skills", label: "SKILLS" },
     { id: "projects", label: "PROJECTS" },
+    { id: "experience", label: "EXPERIENCE" },
     { id: "education", label: "EDUCATION" },
     { id: "contact", label: "CONTACT" },
   ];
@@ -33,7 +31,7 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
+  const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
@@ -42,12 +40,12 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-portfolio-dark/80 backdrop-blur-lg border-b border-portfolio-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-green-500/30 font-mono">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div
-            className="text-xl font-bold gradient-text cursor-pointer"
+            className="text-xl font-bold text-green-500 cursor-pointer hover:text-green-400 transition-colors"
             onClick={() => scrollToSection("about")}
           >
             'O'P
@@ -59,10 +57,8 @@ const Navigation = () => {
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`text-sm font-medium transition-colors duration-300 hover:text-portfolio-primary ${
-                  activeSection === item.id
-                    ? "text-portfolio-primary"
-                    : "text-portfolio-text-muted"
+                className={`text-sm font-medium transition-colors duration-300 hover:text-green-400 ${
+                  activeSection === item.id ? "text-green-500" : "text-gray-400"
                 }`}
               >
                 {item.label}
@@ -72,33 +68,31 @@ const Navigation = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-portfolio-text"
+              className="p-2 text-green-400 hover:text-green-300 transition-colors"
             >
               {isOpen ? (
                 <X className="h-6 w-6" />
               ) : (
                 <Menu className="h-6 w-6" />
               )}
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-portfolio-card rounded-lg mt-2 mb-4">
+          <div className="md:hidden pb-4">
+            <div className="space-y-1 bg-black border border-green-500/30 rounded-lg p-2">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className={`block w-full text-left px-3 py-2 text-sm font-medium transition-colors duration-300 rounded-md ${
+                  className={`block w-full text-left px-3 py-2 text-sm font-medium transition-colors duration-300 rounded ${
                     activeSection === item.id
-                      ? "text-portfolio-primary bg-portfolio-primary/10"
-                      : "text-portfolio-text-muted hover:text-portfolio-primary hover:bg-portfolio-primary/5"
+                      ? "text-green-500 bg-green-500/10"
+                      : "text-gray-400 hover:text-green-400 hover:bg-green-500/5"
                   }`}
                 >
                   {item.label}

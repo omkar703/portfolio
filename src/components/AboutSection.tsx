@@ -1,385 +1,420 @@
-import { useState, useEffect, useRef } from "react";
-
-// Custom Hook: Detect when an element is in the viewport
-const useInView = (options: IntersectionObserverInit) => {
-  const ref = useRef<HTMLElement>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsInView(true);
-        observer.disconnect();
-      }
-    }, options);
-
-    const currentRef = ref.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
-
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [ref, options]);
-
-  return { ref, isInView };
-};
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  Palette,
+  Sparkles,
+  Layers,
+} from "lucide-react";
 
 const AboutSection = () => {
-  const [typedText, setTypedText] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const [glitchActive, setGlitchActive] = useState(false);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const scrollContainerRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollLeftRef = useRef(0);
 
-  const { ref: sectionRef, isInView: isSectionInView } = useInView({
-    threshold: 0.15,
-  });
+  const services = [
+    {
+      title: "AI/ML Development",
+      description:
+        "Building intelligent systems with machine learning models, deep learning architectures, and AI-powered solutions.",
+      icon: <Cpu className="w-10 h-10" />,
+    },
+    {
+      title: "Computer Vision",
+      description:
+        "Developing advanced computer vision applications for image recognition, object detection, and visual analytics.",
+      icon: <Palette className="w-10 h-10" />,
+    },
+    {
+      title: "NLP & LLMs",
+      description:
+        "Creating natural language processing solutions and working with large language models for intelligent text analysis.",
+      icon: <Sparkles className="w-10 h-10" />,
+    },
+    {
+      title: "Full-Stack Development",
+      description:
+        "Building scalable web applications with modern frameworks, REST APIs, and database management systems.",
+      icon: <Layers className="w-10 h-10" />,
+    },
+  ];
 
-  const aboutText = `> Initializing Omkar_Phadatare.exe...
-> SYSTEM SCAN COMPLETE
-> -------------------
-> IDENTITY: Omkar Phadatare
-> Core Interests: AI | ML | Deep Learning | Computer Vision | LLMs
-> PROCESSING CAPABILITIES:
-> - Design/Develop/Deploy AI Systems ✓
-> - Cross-functional Team Leadership ✓
-> _`;
+  const skills = [
+    "Python",
+    "PyTorch",
+    "TensorFlow",
+    "React",
+    "Node.js",
+    "Docker",
+    "AWS",
+    "Computer Vision",
+  ];
 
-  useEffect(() => {
-    if (!isSectionInView) {
-      setTypedText("");
-      return;
+  const updateScrollPosition = useCallback(() => {
+    if (scrollContainerRef.current) {
+      setScrollPosition(scrollContainerRef.current.scrollLeft);
     }
-    let i = 0;
-    const typeInterval = setInterval(() => {
-      if (i < aboutText.length) {
-        setTypedText(aboutText.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(typeInterval);
-      }
-    }, 30);
-    return () => clearInterval(typeInterval);
-  }, [aboutText, isSectionInView]);
+  }, []);
+
+  const scroll = (direction) => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const cardWidth =
+        container.querySelector(".service-card")?.offsetWidth || 0;
+      const gap = 32;
+      const scrollAmount = cardWidth + gap;
+      const newPosition =
+        direction === "left"
+          ? container.scrollLeft - scrollAmount
+          : container.scrollLeft + scrollAmount;
+
+      container.scrollTo({
+        left: newPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Drag to scroll
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onMouseDown = (e) => {
+      isDraggingRef.current = true;
+      container.classList.add("dragging");
+      dragStartXRef.current = e.pageX - container.offsetLeft;
+      dragStartScrollLeftRef.current = container.scrollLeft;
+    };
+    const onMouseLeave = () => {
+      isDraggingRef.current = false;
+      container.classList.remove("dragging");
+    };
+    const onMouseUp = () => {
+      isDraggingRef.current = false;
+      container.classList.remove("dragging");
+    };
+    const onMouseMove = (e) => {
+      if (!isDraggingRef.current) return;
+      e.preventDefault();
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - dragStartXRef.current) * 1.2;
+      container.scrollLeft = dragStartScrollLeftRef.current - walk;
+    };
+
+    container.addEventListener("mousedown", onMouseDown);
+    container.addEventListener("mouseleave", onMouseLeave);
+    container.addEventListener("mouseup", onMouseUp);
+    container.addEventListener("mousemove", onMouseMove);
+
+    return () => {
+      container.removeEventListener("mousedown", onMouseDown);
+      container.removeEventListener("mouseleave", onMouseLeave);
+      container.removeEventListener("mouseup", onMouseUp);
+      container.removeEventListener("mousemove", onMouseMove);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!isSectionInView) return;
-    const scanningInterval = setInterval(() => {
-      setIsScanning(true);
-      setTimeout(() => setIsScanning(false), 1500);
-    }, 8000);
-    const glitchInterval = setInterval(() => {
-      setGlitchActive(true);
-      setTimeout(() => setGlitchActive(false), 200);
-    }, 6000);
+    const container = scrollContainerRef.current;
+    const handleScroll = () => updateScrollPosition();
+    const handleResize = () => updateScrollPosition();
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll, { passive: true });
+      window.addEventListener("resize", handleResize);
+    }
     return () => {
-      clearInterval(scanningInterval);
-      clearInterval(glitchInterval);
+      if (container) container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
     };
-  }, [isSectionInView]);
+  }, [updateScrollPosition]);
+
+  const canScrollLeft = scrollPosition > 2;
+  const canScrollRight = scrollContainerRef.current
+    ? scrollPosition <
+      scrollContainerRef.current.scrollWidth -
+        scrollContainerRef.current.clientWidth -
+        10
+    : true;
 
   return (
-    <section
-      ref={sectionRef}
-      className={`min-h-screen bg-black relative overflow-hidden font-mono py-12 sm:py-16 transition-all duration-1000 ${
-        isSectionInView
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-10"
-      }`}
-    >
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-black to-cyan-900/20"></div>
-      </div>
+    <>
+      <style>{`
+        .hover-lift {
+          transition: all 0.3s ease;
+        }
+        .hover-lift:hover {
+          transform: translateY(-2px);
+        }
 
-      <div className="relative z-10 mb-8 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-black/80 border border-green-500/50 rounded-lg p-4 backdrop-blur-sm">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-green-400 text-sm ml-4">
-                about-dev v3.2.1
-              </span>
-            </div>
-            <div className="text-green-400 text-sm sm:text-lg">
-              <span className="text-green-500">$</span>{" "}
-              ./scan_developer_profile.sh --verbose
-            </div>
+        .scroll-container {
+          scrollbar-width: thin;
+          scrollbar-color: #10b981 #000;
+          -webkit-overflow-scrolling: touch;
+          user-select: none;
+          cursor: grab;
+        }
+
+        .scroll-container.dragging {
+          cursor: grabbing;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+          height: 6px;
+        }
+
+        .scroll-container::-webkit-scrollbar-track {
+          background: #000;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+          background: #10b981;
+          border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+          .scroll-container {
+            scroll-snap-type: x mandatory;
+            scroll-padding: 1rem;
+          }
+          
+          .service-card {
+            scroll-snap-align: start;
+          }
+        }
+      `}</style>
+
+      <section className="min-h-screen bg-black font-mono py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Minimalist Header */}
+          <div className="mb-20">
+            <h2 className="text-5xl lg:text-6xl font-bold text-gray-300 mb-3">
+              About Me
+            </h2>
+            <p className="text-lg text-gray-500">
+              Building intelligent systems with passion and precision.
+            </p>
           </div>
-        </div>
-      </div>
 
-      <div className="relative z-10 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="space-y-6">
-              <div className="bg-black/90 border border-green-500/50 rounded-lg overflow-hidden backdrop-blur-sm">
-                <div className="bg-green-500/10 px-4 sm:px-6 py-3 border-b border-green-500/30">
-                  <span className="text-green-400 text-lg">
-                    IDENTITY_SCANNER.EXE
-                  </span>
-                </div>
-                <div className="p-4 sm:p-6">
-                  <div className="space-y-4">
-                    <div
-                      className={`text-xl sm:text-2xl font-bold text-green-400 ${
-                        glitchActive ? "animate-pulse" : ""
-                      }`}
-                    >
-                      <span className="text-green-500">$</span> whoami
+          {/* Main Content */}
+          <div className="space-y-20">
+            {/* About Section */}
+            <div className="grid lg:grid-cols-5 gap-16">
+              {/* Avatar - 2 columns */}
+              <div className="lg:col-span-2 flex justify-center lg:justify-start">
+                <div className="flex flex-col items-center">
+                  {/* Simple Avatar */}
+                  <div className="w-56 h-56 lg:w-64 lg:h-64 rounded-full border-2 border-gray-800 hover:border-green-500 transition-colors overflow-hidden bg-black flex items-center justify-center hover-lift">
+                    <div className="text-7xl lg:text-8xl font-black text-gray-300">
+                      <img
+                        src="https://static.vecteezy.com/system/resources/previews/043/905/674/non_2x/developer-line-inverted-icon-design-vector.jpg"
+                        alt=""
+                      />
                     </div>
-                    <div
-                      className={`text-3xl sm:text-4xl font-bold text-white leading-tight ${
-                        glitchActive ? "text-red-400" : ""
-                      }`}
-                    >
-                      I'm Omkar Phadatare, AI/ML Developer
-                    </div>
+                  </div>
+
+                  {/* Simple Badge */}
+                  <div className="mt-6 px-4 py-2 bg-black border-2 border-gray-800 rounded-full">
+                    <span className="text-green-500 font-bold text-sm whitespace-nowrap">
+                      AI/ML Developer
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-black/90 border border-green-500/50 rounded-lg overflow-hidden backdrop-blur-sm transition-all duration-500 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/20">
-                <div className="bg-green-500/10 px-4 sm:px-6 py-3 border-b border-green-500/30 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-green-400 text-lg">
-                      PROFILE_DATA.LOG
+              {/* Content - 3 columns */}
+              <div className="lg:col-span-3 space-y-8">
+                {/* Intro */}
+                <div className="space-y-6">
+                  <p className="text-gray-300 text-lg leading-relaxed">
+                    Welcome! I'm{" "}
+                    <span className="text-green-500 font-semibold">
+                      Omkar Phadatare
                     </span>
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <div
-                        className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                        style={{ animationDelay: "0.3s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                        style={{ animationDelay: "0.6s" }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 sm:p-6 min-h-[24rem] overflow-hidden relative">
-                  <div className="text-green-400 text-sm sm:text-base leading-relaxed transition-all duration-300">
-                    <div className="whitespace-pre-wrap">{typedText}</div>
-                    <span
-                      className={`animate-pulse text-white ${
-                        typedText.length === aboutText.length ? "hidden" : ""
-                      }`}
-                    >
-                      _
-                    </span>
-                  </div>
-                  <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6">
-                    <div className="w-full bg-gray-800 rounded-full h-1">
-                      <div
-                        className="bg-gradient-to-r from-green-500 to-cyan-500 h-1 rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${Math.min(
-                            (typedText.length / aboutText.length) * 100,
-                            100
-                          )}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <div className="text-green-400 text-xs mt-1">
-                      Loading:{" "}
-                      {Math.min(
-                        Math.round((typedText.length / aboutText.length) * 100),
-                        100
-                      )}
-                      %
-                    </div>
-                  </div>
-                </div>
-              </div>
+                    , a passionate AI/ML Developer dedicated to creating
+                    intelligent systems and innovative solutions. With expertise
+                    in deep learning, computer vision, and large language
+                    models, I specialize in designing, developing, and deploying
+                    AI systems that solve real-world problems.
+                  </p>
 
-              <div className="bg-black/90 border border-green-500/50 rounded-lg overflow-hidden backdrop-blur-sm">
-                <div className="bg-green-500/10 px-4 sm:px-6 py-3 border-b border-green-500/30">
-                  <span className="text-green-400 text-lg">
-                    DEVELOPER_STATS.SYS
-                  </span>
+                  <p className="text-gray-300 text-lg leading-relaxed">
+                    My skills include building end-to-end machine learning
+                    pipelines, working with modern frameworks like PyTorch and
+                    TensorFlow, and developing scalable applications using
+                    cutting-edge technologies.
+                  </p>
                 </div>
-                <div className="p-4 sm:p-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { label: "AI_PROJECTS", value: "15+" },
-                      { label: "CODE_LINES", value: "50K+" },
-                      { label: "YEARS_EXP", value: "2+" },
-                      { label: "TECH_STACK", value: "3+" },
-                    ].map((stat, index) => (
-                      <div
-                        key={index}
-                        className="bg-green-500/10 border border-green-500/30 rounded p-3"
+
+                {/* Skills */}
+                <div className="pt-8 border-t border-gray-900">
+                  <div className="mb-4">
+                    <span className="text-sm uppercase tracking-wider text-gray-500">
+                      Core Skills
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-4 py-2 bg-black border border-gray-800 rounded text-gray-400 hover:text-green-500 hover:border-green-500 transition-all text-sm hover-lift cursor-default"
                       >
-                        <div className="text-green-300 text-xs">
-                          {stat.label}
-                        </div>
-                        <div className="text-white text-xl font-bold">
-                          {stat.value}
-                        </div>
-                      </div>
+                        {skill}
+                      </span>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-center lg:justify-end relative mt-12 lg:mt-0">
-              {/* --- ALL DECORATIVE ELEMENTS RESTORED BELOW --- */}
-              {/* --- THEY ARE HIDDEN ON MOBILE FOR RESPONSIVENESS --- */}
-
-              <div className="absolute top-1/4 left-0 w-24 h-px bg-gradient-to-r from-green-500/50 to-transparent animate-pulse hidden lg:block"></div>
-              <div
-                className="absolute top-1/2 left-0 w-32 h-px bg-gradient-to-r from-cyan-500/50 to-transparent animate-pulse hidden lg:block"
-                style={{ animationDelay: "1s" }}
-              ></div>
-              <div
-                className="absolute bottom-1/4 left-0 w-20 h-px bg-gradient-to-r from-blue-500/50 to-transparent animate-pulse hidden lg:block"
-                style={{ animationDelay: "2s" }}
-              ></div>
-
-              <div className="absolute top-1/4 left-20 w-3 h-3 bg-green-500 rounded-full animate-ping hidden lg:block"></div>
-              <div
-                className="absolute top-1/2 left-28 w-3 h-3 bg-cyan-500 rounded-full animate-ping hidden lg:block"
-                style={{ animationDelay: "1s" }}
-              ></div>
-              <div
-                className="absolute bottom-1/4 left-16 w-3 h-3 bg-blue-500 rounded-full animate-ping hidden lg:block"
-                style={{ animationDelay: "2s" }}
-              ></div>
-
-              <div className="absolute top-8 left-8 bg-black/80 border border-green-500/30 rounded p-3 backdrop-blur-sm hidden lg:block">
-                <div className="text-green-400 text-xs">
-                  <div>CPU: 98.7%</div>
-                  <div>GPU: 100%</div>
-                  <div>RAM: ++GB</div>
-                  <div>NEURAL_NET: ACTIVE</div>
-                </div>
-              </div>
-              <div className="absolute bottom-16 left-4 bg-black/80 border border-cyan-500/30 rounded p-3 backdrop-blur-sm hidden lg:block">
-                <div className="text-cyan-400 text-xs">
-                  <div>AI_MODELS: 24</div>
-                  <div>DATASETS: --</div>
-                  <div>TRAINING: --</div>
-                </div>
+            {/* Services Section */}
+            <div className="pt-20 border-t border-gray-900">
+              <div className="mb-16">
+                <h3 className="text-4xl lg:text-5xl font-bold text-gray-300 mb-3">
+                  Services & Expertise
+                </h3>
+                <p className="text-lg text-gray-500">
+                  Transforming ideas into intelligent solutions.
+                </p>
               </div>
 
-              <div className="absolute inset-0 opacity-10 hidden lg:block">
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: `linear-gradient(90deg, rgba(0,255,0,0.3) 1px, transparent 1px), linear-gradient(rgba(0,255,0,0.3) 1px, transparent 1px)`,
-                    backgroundSize: "40px 40px",
-                  }}
-                ></div>
-              </div>
-
+              {/* Services Slider */}
               <div className="relative">
+                {/* Navigation Buttons - Desktop */}
+                {canScrollLeft && (
+                  <button
+                    onClick={() => scroll("left")}
+                    className="hidden lg:flex absolute -left-16 top-1/2 -translate-y-1/2 z-20 text-gray-600 hover:text-green-500 transition-colors"
+                    aria-label="Previous"
+                  >
+                    <ChevronLeft className="w-8 h-8" />
+                  </button>
+                )}
+
+                {canScrollRight && (
+                  <button
+                    onClick={() => scroll("right")}
+                    className="hidden lg:flex absolute -right-16 top-1/2 -translate-y-1/2 z-20 text-gray-600 hover:text-green-500 transition-colors"
+                    aria-label="Next"
+                  >
+                    <ChevronRight className="w-8 h-8" />
+                  </button>
+                )}
+
+                {/* Mobile Navigation */}
+                <div className="flex lg:hidden justify-between mb-8">
+                  <button
+                    onClick={() => scroll("left")}
+                    disabled={!canScrollLeft}
+                    className={`p-2 rounded transition-colors ${
+                      canScrollLeft
+                        ? "text-gray-400 hover:text-green-500"
+                        : "text-gray-800 cursor-not-allowed"
+                    }`}
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={() => scroll("right")}
+                    disabled={!canScrollRight}
+                    className={`p-2 rounded transition-colors ${
+                      canScrollRight
+                        ? "text-gray-400 hover:text-green-500"
+                        : "text-gray-800 cursor-not-allowed"
+                    }`}
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Services Cards */}
                 <div
-                  className={`relative transition-all duration-500 z-10 ${
-                    isScanning ? "scale-105" : "scale-100"
-                  }`}
+                  ref={scrollContainerRef}
+                  className="scroll-container overflow-x-auto pb-8"
+                  tabIndex={0}
+                  aria-label="Services carousel"
                 >
-                  <div className="w-full max-w-sm mx-auto lg:w-96 lg:max-w-none h-[450px] sm:h-[500px] bg-black/90 border border-green-500/50 rounded-2xl overflow-hidden backdrop-blur-sm hover:border-green-400 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/20">
-                    <div className="bg-green-500/10 px-4 sm:px-6 py-3 border-b border-green-500/30">
-                      <span className="text-green-400 text-lg">
-                        VISUAL_PROFILE.IMG
-                      </span>
-                    </div>
-                    <div className="p-4 sm:p-6 h-full flex flex-col">
-                      <div className="flex-1 flex items-center justify-center relative">
-                        <div className="relative w-full h-full">
-                          <div className="w-full h-full rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-green-500/30 overflow-hidden">
-                            <div className="w-full h-full flex items-center justify-center relative">
-                              <img
-                                src="/profile.jpg"
-                                alt="Profile"
-                                className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-300"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none";
-                                  const fallback =
-                                    document.getElementById("profile-fallback");
-                                  if (fallback) fallback.style.display = "flex";
-                                }}
-                              />
-                              <div
-                                id="profile-fallback"
-                                className="hidden absolute inset-0 flex-col items-center justify-center text-center space-y-4 p-6"
-                              >
-                                <div className="w-32 h-32 bg-green-500/20 rounded-full border border-green-500/50 flex items-center justify-center mx-auto">
-                                  <svg
-                                    className="w-16 h-16 text-green-400"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                </div>
+                  <div className="flex gap-8 min-w-max">
+                    {services.map((service) => (
+                      <div
+                        key={service.title}
+                        className="service-card flex-shrink-0 w-[85vw] sm:w-[70vw] md:w-[45vw] lg:w-[340px]"
+                      >
+                        <div className="h-full p-8 border-2 border-gray-900 hover:border-green-500  ">
+                          <div className="space-y-6">
+                            {/* Icon */}
+                            <div className="text-gray-600">{service.icon}</div>
+
+                            {/* Content */}
+                            <div className="space-y-3">
+                              <h4 className="text-2xl font-bold text-gray-300">
+                                {service.title}
+                              </h4>
+                              <p className="text-gray-500 leading-relaxed">
+                                {service.description}
+                              </p>
+                            </div>
+
+                            {/* Arrow */}
+                            <div className="pt-4">
+                              <div className="inline-flex items-center text-green-500 ">
+                                <ChevronRight className="" />
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="absolute -top-6 -right-6 w-12 h-12 border border-green-500/50 rounded bg-green-500/10 hidden lg:flex items-center justify-center animate-bounce hover:scale-110 transition-transform duration-300">
-                  <span className="text-green-400 text-xs font-bold">AI</span>
+                {/* Scroll Indicators */}
+                <div className="flex justify-center mt-8 gap-2">
+                  {services.map((_, index) => {
+                    const container = scrollContainerRef.current;
+                    const isActive = container
+                      ? Math.abs(
+                          scrollPosition -
+                            index *
+                              ((container.querySelector(".service-card")
+                                ?.offsetWidth || 0) +
+                                32)
+                        ) < 100
+                      : index === 0;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          if (container) {
+                            const cardWidth =
+                              container.querySelector(".service-card")
+                                ?.offsetWidth || 0;
+                            container.scrollTo({
+                              left: index * (cardWidth + 32),
+                              behavior: "smooth",
+                            });
+                          }
+                        }}
+                        className={`h-1 rounded-full transition-all ${
+                          isActive
+                            ? "w-8 bg-green-500"
+                            : "w-1 bg-gray-800 hover:bg-gray-700"
+                        }`}
+                        aria-label={`Go to service ${index + 1}`}
+                      />
+                    );
+                  })}
                 </div>
-                <div
-                  className="absolute -bottom-6 -left-6 w-10 h-10 border border-cyan-500/50 rounded bg-cyan-500/10 hidden lg:flex items-center justify-center animate-bounce hover:scale-110 transition-transform duration-300"
-                  style={{ animationDelay: "1s" }}
-                >
-                  <span className="text-cyan-400 text-xs font-bold">ML</span>
-                </div>
-                <div
-                  className="absolute top-1/2 -left-8 w-8 h-8 border border-blue-500/50 rounded bg-blue-500/10 hidden lg:flex items-center justify-center animate-bounce hover:scale-110 transition-transform duration-300"
-                  style={{ animationDelay: "2s" }}
-                >
-                  <span className="text-blue-400 text-xs font-bold">CV</span>
-                </div>
-                <div
-                  className="absolute top-1/4 -right-8 w-6 h-6 border border-yellow-500/50 rounded bg-yellow-500/10 hidden lg:block animate-pulse hover:scale-110 transition-transform duration-300"
-                  style={{ animationDelay: "0.5s" }}
-                >
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mx-auto mt-1"></div>
-                </div>
-                <div className="absolute top-12 -left-12 w-auto h-8 bg-black/80 border border-purple-500/30 rounded hidden lg:flex items-center justify-center px-2">
-                  <span className="text-purple-400 text-xs whitespace-nowrap">
-                    DEEP_LEARNING
-                  </span>
-                </div>
-                <div className="absolute bottom-12 -right-12 w-14 h-8 bg-black/80 border border-orange-500/30 rounded hidden lg:flex items-center justify-center">
-                  <span className="text-orange-400 text-xs">LLM</span>
-                </div>
-
-                <div className="absolute top-0 left-1/2 w-px h-20 bg-gradient-to-b from-green-500/50 to-transparent animate-pulse hidden lg:block"></div>
-                <div
-                  className="absolute bottom-0 right-1/4 w-px h-16 bg-gradient-to-t from-cyan-500/50 to-transparent animate-pulse hidden lg:block"
-                  style={{ animationDelay: "1s" }}
-                ></div>
-                <div
-                  className="absolute top-1/3 right-0 h-px w-16 bg-gradient-to-r from-blue-500/50 to-transparent animate-pulse hidden lg:block"
-                  style={{ animationDelay: "2s" }}
-                ></div>
-                <div
-                  className="absolute bottom-1/3 left-0 h-px w-12 bg-gradient-to-l from-purple-500/50 to-transparent animate-pulse hidden lg:block"
-                  style={{ animationDelay: "3s" }}
-                ></div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 
