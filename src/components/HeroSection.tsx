@@ -1,4 +1,4 @@
-import { Github, Linkedin, Mail, ArrowRight } from "lucide-react";
+import { Github, Linkedin, Mail, ArrowRight, Download } from "lucide-react";
 
 const HeroSection = () => {
   const scrollToContact = () => {
@@ -48,11 +48,12 @@ const HeroSection = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
             <a
-              href="public/Professional.pdf"
+              href="/Professional.pdf"
               download="Omkar-Phadatare-Resume.pdf"
               className="flex items-center gap-2 px-7 py-3 text-white text-sm font-medium rounded-full border border-white/20 hover:border-white/40 hover:bg-white/5 transition-all duration-300 backdrop-blur-sm"
             >
-              View Resume
+              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+              GET RESUME
             </a>
           </div>
 
