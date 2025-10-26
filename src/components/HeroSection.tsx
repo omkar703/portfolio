@@ -48,7 +48,7 @@ const HeroSection = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
             <a
-              href="Professional.pdf"
+              href="public/Professional.pdf"
               download="Omkar-Phadatare-Resume.pdf"
               className="flex items-center gap-2 px-7 py-3 text-white text-sm font-medium rounded-full border border-white/20 hover:border-white/40 hover:bg-white/5 transition-all duration-300 backdrop-blur-sm"
             >
